@@ -1,0 +1,74 @@
+#!/bin/bash
+#https://www.libvirt.org/hooks.html
+
+#Parse command line args and read XML domain description from stdin
+DOMAIN=$1
+OP_MAIN=$2
+OP_SUB=$3
+OP_EXTRA=$4
+CONFIG=$(</dev/stdin)
+
+#TODO split the base hook and the utilities: qemu -> look at qemu.d/ -> qemu/pygrub-kvm
+
+#User settings
+PYGRUB="/usr/lib/xen-4.1/bin/pygrub"
+BASE_PATH="/srv/kvm/kernel-guest"
+#source ${0}.conf
+
+#Sanity checks
+[ "$OP_MAIN" = "prepare" ] || [ "$OP_SUB" == "begin" ] exit 0
+[ -x "$(command -v xmlstarlet)" ] || { >&2 echo "Install xmlstarlet"; exit -1; }
+[ -x "$(command -v basename)" ] || { >&2 echo "Install basename"; exit -1; }
+[ -x "$(command -v dirname)" ] || { >&2 echo "Install dirname"; exit -1; }
+[ -x "${PYGRUB}" ] || { >&2 echo "Install pygrub (xen-utils)"; exit -1; }
+
+#Normalize reference path
+REF_PATH=$(dirname "${BASE_PATH}/${DOMAIN}/x" | tr '[:upper:]' '[:lower:]')
+REF_KERNEL_NAME="vmlinuz"
+REF_INITRD_NAME="initrd"
+
+
+#Parse XML - http://xmlstar.sourceforge.net/doc/UG/xmlstarlet-ug.html
+VALUES=($(echo -ne "$CONFIG" | xmlstarlet sel -B -t \
+	-v '//domain/os/kernel' -n -v '//domain/os/initrd' -n \
+	-m '//domain/devices/disk[@device="disk"]' -v 'source/@file' -n))
+[ $? -eq 0 ] || { >&2 echo "XML parse error"; exit -2; }
+
+CONF_KERNEL_PATH=$(dirname "${VALUES[0]}" | tr '[:upper:]' '[:lower:]')
+CONF_KERNEL_NAME=$(basename "${VALUES[0]}")
+
+CONF_INITRD_PATH=$(dirname "${VALUES[1]}" | tr '[:upper:]' '[:lower:]')
+CONF_INITRD_NAME=$(basename "${VALUES[1]}")
+
+#This is not an error. The instance may have its kernel in the host.
+[ "${REF_PATH}" == "${CONF_KERNEL_PATH}" \
+-a "${REF_PATH}" == "${CONF_INITRD_PATH}" \
+-a "${REF_KERNEL_NAME}" == "${CONF_KERNEL_NAME}" \
+-a "${REF_INITRD_NAME}" == "${CONF_INITRD_NAME}" ] || 
+{ 
+	>&2 echo "Kernel or initrd does not point to ${REF_PATH}/${REF_KERNEL_NAME}|${REF_INITRD_NAME}"; 
+	exit 0;
+}
+
+#Create reference path
+mkdir -p "${REF_PATH}"
+
+#Look for kernel images | Disks are test in order of appaerance in the XML description and stops in the first match
+for DISK in ${VALUES[@]:2}
+do
+	[ -n "${DISK}" ] || continue
+	RESULT=$($PYGRUB -q --output-directory="$REF_PATH" "$DISK" 2>/dev/null)
+	if [ $? -eq 0 ]
+	then
+		#Found - move pygrub files
+		echo "${DISK}: FOUND"
+		PYGK=$(echo $RESULT | sed 's/[()]/ /g' | awk '{print $3}')
+		PYGI=$(echo $RESULT | sed 's/[()]/ /g' | awk '{print $5}')
+		mv -f "${PYGK}" "${REF_PATH}/${REF_KERNEL_NAME}" || exit -3
+		mv -f "${PYGI}" "${REF_PATH}/${REF_INITRD_NAME}" || exit -3
+		chmod 644 "${REF_PATH}/${REF_KERNEL_NAME}" "${REF_PATH}/${REF_INITRD_NAME}"
+		break	
+	fi
+	echo "${DISK}: FAIL"
+	echo
+done
