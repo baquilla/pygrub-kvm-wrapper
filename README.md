@@ -15,7 +15,7 @@ After a few days (years) of web browsing I still cannot understand why there is 
  
 [Pygrub](http://wiki.xen.org/wiki/PyGrub) is intended to be used with xen-tool to find /boot/grub/menu.lst and locate the kernel/initrd pair to be loaded. Also, in debian, exists the pv-grub-menu package which creates the /boot/grub/menu.lst. Clean and easy.
 
-Libvirt allows the domain/os/bootloader[1](https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Virtualization_Administration_Guide/sub-sect-op-sys-host-boot.html)[2](https://libvirt.org/formatdomain.html#elementsOSBootloader) parameter to be set to pygrub but just works for Xen domains. I'd like to deepen into libvirt and allow kvm domains to use pygrub. However, I do not have enough time and this workaround seems to be really functional.
+Libvirt allows the domain/os/bootloader[[1](https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Virtualization_Administration_Guide/sub-sect-op-sys-host-boot.html)][[2](https://libvirt.org/formatdomain.html#elementsOSBootloader)] parameter to be set to pygrub but just works for Xen domains. I'd like to deepen into libvirt and allow kvm domains to use pygrub. However, I do not have enough time and this workaround seems to be really functional.
 
 #Solution
 This script is a hook for libvirt. Works as a wrapper for pygrup:

@@ -8,7 +8,7 @@ OP_SUB=$3
 OP_EXTRA=$4
 CONFIG=$(</dev/stdin)
 
-#TODO split the base hook and the utilities: qemu -> look at qemu.d/ -> qemu/pygrub-kvm
+#TODO split the base hook and the utilities: qemu -> look at qemu.d/ -> qemu.d/pygrub-kvm
 
 #User settings
 PYGRUB="/usr/lib/xen-4.1/bin/pygrub"
