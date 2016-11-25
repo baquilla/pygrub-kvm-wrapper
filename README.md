@@ -26,19 +26,19 @@ The qemu script is a hook for libvirt. Works as a wrapper for pygrup:
 
 #Installation (Based on Debian host/guest)
 
-+ Host (Dom0)
++ Host (Dom0 - debian wheezy or newer)
     + Copy qemu into /etc/libvirt/hooks/ and chmod 755
     + Install xen-utils-X.X to get pygrub (apt-get install --no-install-recommends xen-utils-4.1)
     + Install xmlstarlet and coreutils (basename/dirname) (apt-get install xmlstarlet coreutils)
     + Customize the script: set pygrub path (PYGRUB) and kernel images storage base path (BASE_PATH)
     + Restart libvirtd (service libvirt-bin restart or the equivalent for systemd)
 
-+ Guest (DomU)
++ Guest (DomU - debian jessie or newer)
     + Install linux-image-amd64 (or the one required for your VM) and pv-grub-menu
     + Remove /boot/grub/menu.lst and run update-menu-lst
     + If grub was installed, purge and leave only pv-grub-menu
     + If your are moving Xen VM to KVM review fstab, interfaces and persistent-net rules.
     + Configure Domain (note that DOMAIN is the exact libvirt domain name):
-        + domain/os/kernel set to REF_PATH/**DOMAIN**/vmlinuz, ex: /srv/kvm/kernel-images/**test-vm**/vmlinuz
-        + domain/os/initrd set to REF_PATH/**DOMAIN**/initrd, ex: /srv/kvm/kernel-images/**test-vm**/initrd
+        + domain/os/kernel set to REF_PATH/**DOMAIN**/vmlinuz, ex: /srv/kvm/kernel-guest/**test-vm**/vmlinuz
+        + domain/os/initrd set to REF_PATH/**DOMAIN**/initrd, ex: /srv/kvm/kernel-guest/**test-vm**/initrd
         + domain/os/cmdline the kernel command line. The command line set in menu.lst is ignored.
