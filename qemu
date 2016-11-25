@@ -18,7 +18,7 @@ BASE_PATH="/srv/kvm/kernel-guest"
 #source ${0}.conf
 
 #Sanity checks
-[ "$OP_MAIN" = "prepare" ] || [ "$OP_SUB" == "begin" ] exit 0
+[ "$OP_MAIN" == "prepare" ] || [ "$OP_SUB" == "begin" ] || exit 0
 [ -x "$(command -v xmlstarlet)" ] || { >&2 echo "Install xmlstarlet"; exit -1; }
 [ -x "$(command -v basename)" ] || { >&2 echo "Install basename"; exit -1; }
 [ -x "$(command -v dirname)" ] || { >&2 echo "Install dirname"; exit -1; }
