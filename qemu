@@ -2,6 +2,7 @@
 #https://www.libvirt.org/hooks.html
 
 #update: wget https://github.com/baquilla/pygrub-kvm-wrapper/raw/master/qemu -O /etc/libvirt/hooks/qemu
+#test: /etc/libvirt/hooks/qemu DOMAIN prepare begin </etc/libvirt/qemu/DOMAIN.xml
 
 #Parse command line args and read XML domain description from stdin
 DOMAIN=$1
