@@ -12,11 +12,12 @@ OP_EXTRA=$4
 CONFIG=$(</dev/stdin)
 
 #TODO split the base hook and the utilities: qemu -> look at qemu.d/ -> qemu.d/pygrub-kvm
+# Chris Marget had be working on this. Take as reference: http://www.fragmentationneeded.net/2014/09/making-better-use-of-libvirt-hooks.html
 
 #User settings
-PYGRUB="/usr/lib/xen-4.1/bin/pygrub"
+PYGRUB=$(ls -v /usr/lib/*/bin/pygrub | tail -n1)
 BASE_PATH="/srv/kvm/kernel-guest"
-#source ${0}.conf
+#TODO source ${0}.conf or get base path from /etc/default/libvirt-guests QEMU_DIRECT_KERNEL_BOOT_PATH
 
 #Sanity checks
 [ "$OP_MAIN" == "prepare" ] || [ "$OP_SUB" == "begin" ] || exit 0
@@ -59,19 +60,20 @@ mkdir -p "${REF_PATH}"
 for DISK in ${VALUES[@]:2}
 do
 	[ -n "${DISK}" ] || continue
-	RESULT=$($PYGRUB -q --output-format=simple --output-directory="$REF_PATH" "$DISK" 2>/dev/null)
+	RESULT=$($PYGRUB -q --output-format=simple --output-directory="$REF_PATH" "$DISK")
 	if [ $? -eq 0 ]
 	then
 		#Found - move pygrub files
 		PYGK=$(echo "$RESULT" | grep "^kernel" | cut -c 8- )
 		PYGI=$(echo "$RESULT" | grep "^ramdisk" | cut -c 9- )
 		PYGA=$(echo "$RESULT" | grep "^args" | cut -c 6- )
-		echo "${DISK}: FOUND. Args ignored: ${PYGA}"
+		>&2 echo "${DISK}: FOUND. Args ignored: ${PYGA}"
 		mv -f "${PYGK}" "${REF_PATH}/${REF_KERNEL_NAME}" || exit -3
 		mv -f "${PYGI}" "${REF_PATH}/${REF_INITRD_NAME}" || exit -3
 		chmod 644 "${REF_PATH}/${REF_KERNEL_NAME}" "${REF_PATH}/${REF_INITRD_NAME}"
+		#echo -ne "$CONFIG" | sed "s|GUEST-KERNEL|${PYGK}|g" | sed "s|GUEST-INITRD|${PYGI}|g"
 		break	
 	fi
-	echo "${DISK}: FAIL. Grub not found."
+	>&2 echo "${DISK}: FAIL. Grub not found."
 	echo
 done
